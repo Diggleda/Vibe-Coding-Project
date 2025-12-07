@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Star Chart Systems | Production Line Optimization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-feature-settings: "liga" off;
+      }
+      .starfield {
+        background: radial-gradient(circle at 20% 20%, rgba(88, 143, 255, 0.18), transparent 40%), radial-gradient(circle at 80% 10%, rgba(129, 220, 255, 0.2), transparent 45%), #030712;
+      }
+      .glass {
+        backdrop-filter: blur(16px);
+        background: rgba(15, 23, 42, 0.7);
+      }
+      .logo-ring {
+        background: radial-gradient(circle at center, #092143 0%, #061022 60%, #030712 100%);
+      }
+      .logo-ring img {
+        width: 70%;
+        height: auto;
+        object-fit: contain;
+      }
+      .floor-wrapper {
+        background:
+          radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.15), transparent 30%),
+          radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12), transparent 35%),
+          radial-gradient(circle at 20% 70%, rgba(236, 72, 153, 0.08), transparent 40%),
+          repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.08) 1px, transparent 1px, transparent 60px),
+          repeating-linear-gradient(90deg, rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.08) 1px, transparent 1px, transparent 60px),
+          #020617;
+        position: relative;
+      }
+      .floor-wrapper::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, rgba(12, 17, 35, 0), rgba(12, 17, 35, 0.6));
+        pointer-events: none;
+      }
+      canvas {
+        image-rendering: crisp-edges;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen starfield text-white">
+    <div class="relative overflow-hidden">
+      <div class="pointer-events-none absolute inset-0 opacity-50">
+        <div class="absolute left-[15%] top-[20%] h-1.5 w-1.5 rounded-full bg-white/70"></div>
+        <div class="absolute left-[80%] top-[35%] h-1 w-1 rounded-full bg-blue-300/60"></div>
+        <div class="absolute left-[40%] top-[70%] h-1 w-1 rounded-full bg-white/60"></div>
+        <div class="absolute left-[65%] top-[80%] h-1.5 w-1.5 rounded-full bg-sky-200/70"></div>
+      </div>
+
+      <header class="relative z-10 border-b border-white/10 bg-slate-950/70 backdrop-blur">
+        <div class="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex flex-1 flex-col gap-6 lg:flex-row lg:items-center">
+            <div class="logo-ring flex h-28 w-28 items-center justify-center rounded-full border border-cyan-500/40 shadow-2xl">
+              <img src="Star_Chart_Systems_Logo.png" alt="Star Chart Systems logo" />
+            </div>
+            <div>
+              <p class="text-sm uppercase tracking-[0.4em] text-slate-400">Strategic Technology Report</p>
+              <h1 class="mt-3 text-3xl font-semibold text-white sm:text-4xl">Star Chart Systems — Production Line Optimization Strategy</h1>
+              <p class="mt-4 max-w-3xl text-slate-300">
+                Star Chart Systems turns factory telemetry into a stellar map—streaming high-resolution motion data every quarter second, layering AI guidance, and surfacing bottlenecks the moment they appear.
+              </p>
+            </div>
+          </div>
+          <div class="glass w-full rounded-2xl border border-cyan-500/20 p-6 text-sm text-slate-200 shadow-2xl lg:max-w-xs">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Constellation Snapshot</p>
+            <dl class="mt-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <dt>Avg. Cycle Time</dt>
+                <dd id="metric-cycle" class="font-semibold text-emerald-300">18.4s</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt>Throughput / hr</dt>
+                <dd id="metric-throughput" class="font-semibold text-sky-300">152</dd>
+              </div>
+              <div class="flex items-center justify-between">
+                <dt>Bottleneck Risk</dt>
+                <dd id="metric-risk" class="font-semibold text-amber-300">Moderate</dd>
+              </div>
+            </dl>
+            <p class="mt-4 text-xs text-slate-400">Metrics update in sync with the high-resolution pseudo sensors to mirror four samples per second.</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <div class="rounded-3xl border border-cyan-500/40 bg-slate-900/70 p-6 shadow-2xl">
+          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Constellation Map</p>
+              <h2 class="mt-2 text-2xl font-semibold text-white">Factory Flow · Live Trace</h2>
+            </div>
+            <div id="secondHighlights" class="flex flex-wrap gap-2 text-xs text-white">
+              <span class="rounded-full bg-emerald-500/60 px-3 py-1 text-slate-900">t-0s</span>
+              <span class="rounded-full bg-sky-500/50 px-3 py-1 text-slate-900">t-1s</span>
+            <span class="rounded-full bg-indigo-500/40 px-3 py-1 text-white/80">t-2s</span>
+            </div>
+          </div>
+          <div class="floor-wrapper relative mt-4 h-[36rem] w-full overflow-hidden rounded-3xl border border-white/10">
+            <div class="absolute inset-0 bg-gradient-to-br from-slate-950/20 via-slate-950/10 to-slate-950/30"></div>
+            <canvas id="factoryCanvas" class="relative z-10 h-full w-full"></canvas>
+          </div>
+          <p class="mt-3 text-sm text-slate-400">Live telemetry is sampled at 12 Hz; trails brighten for the most recent seconds to make velocity changes visible at a glance.</p>
+        </div>
+
+        <div class="rounded-3xl border border-cyan-500/30 bg-slate-900/60 p-6 shadow-2xl">
+          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Flow Congestion Model</p>
+              <h3 class="mt-2 text-xl font-semibold text-white">Kingman VUT Approximation (G/G/1)</h3>
+              <p class="mt-2 text-sm text-slate-300">
+                Wq ≈ (ρ / (1 − ρ)) · ((C<sub>a</sub><sup>2</sup> + C<sub>s</sub><sup>2</sup>) / 2) · (1 / μ) — widely used in manufacturing queueing analysis to estimate average waiting time before service (Kingman, 1961).
+              </p>
+            </div>
+            <div class="rounded-2xl border border-cyan-500/30 bg-slate-950/60 px-4 py-3 text-xs text-slate-200">
+              <p class="font-semibold text-white">Model Inputs</p>
+              <p class="mt-1 text-slate-400">C<sub>a</sub> (arrival variability): <span id="caValue" class="text-emerald-300 font-semibold"></span></p>
+              <p class="text-slate-400">C<sub>s</sub> (service variability): <span id="csValue" class="text-sky-300 font-semibold"></span></p>
+              <p class="text-slate-400">ρ (utilization) derived from live WIP and speed per stage.</p>
+            </div>
+          </div>
+          <div id="congestionRows" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+        </div>
+
+        <div class="flex flex-col gap-8 lg:flex-row">
+          <section class="flex-1 space-y-8">
+            <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-400">1 · Problem Statement</p>
+              <h2 class="mt-3 text-2xl font-semibold text-white">Speed & Cost Barriers</h2>
+            <p class="mt-4 text-slate-300">
+              Traditional line studies resemble dated sky surveys—slow, expensive, and blind to fleeting anomalies. Star Chart Systems solves the speed/cost equation by streaming telemetry directly from tagged parts and displaying their journey as a living map instead of a static report.
+            </p>
+            <p class="mt-3 text-slate-300">The result is a richer signal-to-noise ratio, accelerated improvement cycles, and zero dependence on facility-wide camera rigs.</p>
+          </article>
+
+          <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">2 · Target Market</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Lean-Focused Manufacturers</h2>
+            <p class="mt-4 text-slate-300">
+              We serve small and mid-sized factories that already run lean programs but are priced out of enterprise analytics. Their engineers juggle spreadsheets, clipboards, and gut instinct—missing micro-stops that erode throughput.
+            </p>
+            <p class="mt-3 text-slate-300">By lowering the hardware and expertise threshold, Star Chart Systems lets these teams unlock enterprise-grade visibility without enterprise baggage.</p>
+          </article>
+
+          <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">3 · Solution Overview</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Constellation-Level Tracking</h2>
+            <ul class="mt-4 list-disc space-y-2 pl-6 text-slate-300">
+              <li>Reusable, non-invasive tags secure to each unit and transmit motion, dwell, and micro-stop data 4× per second.</li>
+              <li>Wireless satellites orchestrate tag control, sync clocks, and stream telemetry directly to the Star Chart pipeline.</li>
+              <li>Engineers view an interactive factory plan with historical trails, configure notifications, and export raw data (CSV/JSON) instantly.</li>
+              <li>Collaborative chat enables natural-language exploration plus continual feedback loops to re-train the AI.</li>
+            </ul>
+          </article>
+
+          <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">4 · AI Integration</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Predictive + Prescriptive Intelligence</h2>
+            <p class="mt-4 text-slate-300">
+              Our sequential anomaly detection model spots deviations from optimal flow just like astronomers detect wobbling stars. Each prediction is paired with quantified recommendations and surfaced through an LLM interface that runs on any device.
+            </p>
+            <p class="mt-3 text-slate-300">Inputs include position vectors, timestamp deltas, and operator feedback; outputs include heatmaps, severity scores, and natural-language actions.</p>
+          </article>
+
+          <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">5 · Value Proposition</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Camera-Free, Always-On Coverage</h2>
+            <p class="mt-4 text-slate-300">
+              Star Chart Systems eliminates blind spots by following the part itself, not the line of sight. Tags are reusable, satellites are low-cost, and deployment can be completed in hours. This radically shifts the ROI curve for budget-conscious factories.
+            </p>
+          </article>
+
+          <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">6 · Future Vision</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Autonomous Lean Orbits</h2>
+            <p class="mt-4 text-slate-300">
+              Aggregated telemetry across customers trains our proprietary Lean Insight Model, compounding intelligence like a continuously refined star catalog. Over time, production lines approximate self-optimizing constellations—minimizing waste automatically.
+            </p>
+          </article>
+        </section>
+
+        <aside class="flex w-full max-w-xl flex-col gap-6">
+          <div class="rounded-3xl border border-cyan-500/30 bg-slate-900/60 p-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Station Status</p>
+              <span class="text-xs text-emerald-300">Derived from live data</span>
+            </div>
+            <div id="stationStatus" class="mt-4 grid gap-3 sm:grid-cols-2"></div>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Real-Time Sensor Stream</p>
+              <span class="text-xs text-sky-300">12 Hz refresh</span>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <button data-filter="all" class="filter-chip rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-left text-sm text-slate-200 hover:border-sky-400/60">All Units</button>
+              <button data-filter="fastest" class="filter-chip rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-left text-sm text-slate-200 hover:border-sky-400/60">Fastest Units</button>
+              <button data-filter="slowest" class="filter-chip rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-left text-sm text-slate-200 hover:border-sky-400/60">Slowest Units</button>
+              <button data-filter="stage-average" class="filter-chip rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-left text-sm text-slate-200 hover:border-sky-400/60">Average Stage Speeds</button>
+            </div>
+            <div class="mt-4 overflow-hidden rounded-2xl border border-white/5">
+              <table class="w-full text-left text-sm text-slate-200">
+                <thead class="bg-white/5 text-xs uppercase tracking-widest text-slate-400">
+                  <tr>
+                    <th class="px-4 py-3">Unit / Stage</th>
+                    <th class="px-4 py-3">Stage</th>
+                    <th class="px-4 py-3">Velocity</th>
+                    <th class="px-4 py-3">Dwell</th>
+                    <th class="px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="sensorRows" class="divide-y divide-white/5 bg-slate-950/60"></tbody>
+              </table>
+            </div>
+            <p class="mt-3 text-sm text-slate-400">Use the filter chips to highlight cohorts, surface extremes, or summarize speed by stage.</p>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-400">AI Alerts & Recommendations</p>
+              <span class="text-xs text-amber-300">Continuously updated</span>
+            </div>
+            <ul id="alerts" class="mt-4 space-y-3 text-sm text-slate-200"></ul>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Prompting Sandbox</p>
+            <div class="mt-4 space-y-4 text-sm text-slate-300">
+              <div>
+                <p class="font-semibold text-white">Prototype Prompt</p>
+                <p class="mt-1 text-slate-400">Generate a Star Chart Systems dashboard focused on live floor visualization, alerting, and LLM chat.</p>
+              </div>
+              <div>
+                <p class="font-semibold text-white">ML Prompt</p>
+                <p class="mt-1 text-slate-400">Design a time-series anomaly model that ingests quarter-second x/y telemetry, identifies sequential constraints, and outputs recommendations plus confidence.</p>
+              </div>
+            </div>
+            <div class="mt-5 space-y-3">
+              <label class="text-xs uppercase tracking-[0.4em] text-slate-400" for="chatInput">LLM Chat Prototype</label>
+              <textarea id="chatInput" class="h-24 w-full rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-white placeholder:text-slate-500" placeholder="Ask Star Chart Systems about the current constellation..."></textarea>
+              <button id="chatSend" class="w-full rounded-2xl bg-emerald-400/90 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-300">Send to AI</button>
+              <div id="chatLog" class="space-y-2 text-sm text-slate-300"></div>
+            </div>
+          </div>
+        </aside>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const FACTORY_WIDTH = 70; // meters
+      const FACTORY_HEIGHT = 50; // meters
+      const UPDATE_INTERVAL = 1 / 12; // seconds (12 Hz)
+      const UPDATE_MS = Math.round(UPDATE_INTERVAL * 1000);
+      const MAX_BASE_ACCEL = 0.3; // m/s^2 limit for line speed changes
+      const MAX_UNIT_ACCEL = 0.32; // m/s^2 limit for individual unit acceleration
+      const OFFSET_DECAY = 0.985;
+      const MAX_OFFSET_METERS = 3.5;
+      const IMPULSE_DECAY = 0.9;
+      const HANDLER_OFFSET_THRESHOLD = 0.6; // meters off-track to show human handler
+      const PROGRESS_GAIN = 6; // scales belt speed to visible progress
+      const MIN_PROGRESS_GAP = 0.008; // minimum progress gap to avoid overlap
+      const ARRIVAL_CV = 0.65; // coefficient of variation of arrivals (C_a)
+      const SERVICE_CV = 0.75; // coefficient of variation of service times (C_s)
+
+      const stageBands = [
+        { until: 0.16, stage: "Raw Receiving" },
+        { until: 0.33, stage: "Prep & Mixing" },
+        { until: 0.55, stage: "Formulation Cells" },
+        { until: 0.72, stage: "Quality & Inspection" },
+        { until: 0.88, stage: "Packaging Hall" },
+        { until: 1, stage: "Outbound & Shipping" },
+      ];
+
+      const conveyorBands = [
+        { until: 0.18, speed: 0.95 },
+        { until: 0.35, speed: 1.12 },
+        { until: 0.52, speed: 1.04 },
+        { until: 0.7, speed: 0.96 },
+        { until: 0.85, speed: 1.1 },
+        { until: 1, speed: 1.02 },
+      ];
+
+      const pathNodesNormalized = [
+        // Start: Receiving dock at far left
+        { x: 0.04, y: 0.72 },
+        { x: 0.22, y: 0.72 },
+        { x: 0.22, y: 0.56 },
+        { x: 0.48, y: 0.56 },
+        { x: 0.48, y: 0.42 },
+        { x: 0.7, y: 0.42 },
+        { x: 0.7, y: 0.28 },
+        { x: 0.88, y: 0.28 },
+        // Finish: Outbound & Shipping at far right
+        { x: 0.96, y: 0.28 },
+      ];
+
+      const pathNodes = pathNodesNormalized.map((node) => ({
+        x: node.x * FACTORY_WIDTH,
+        y: node.y * FACTORY_HEIGHT,
+      }));
+
+      const pathSegments = [];
+      let totalPathLength = 0;
+      for (let i = 0; i < pathNodes.length - 1; i++) {
+        const start = pathNodes[i];
+        const end = pathNodes[i + 1];
+        const length = Math.hypot(end.x - start.x, end.y - start.y);
+        totalPathLength += length;
+        pathSegments.push({ start, end, length, cumulative: totalPathLength });
+      }
+
+      const stageMeta = stageBands.map((band, idx) => {
+        const prevUntil = idx === 0 ? 0 : stageBands[idx - 1].until;
+        const share = band.until - prevUntil;
+        return {
+          stage: band.stage,
+          share,
+          length: share * totalPathLength,
+        };
+      });
+
+      function getPointAt(progress) {
+        const targetDistance = progress * totalPathLength;
+        for (const segment of pathSegments) {
+          const prevCum = segment.cumulative - segment.length;
+          if (targetDistance <= segment.cumulative) {
+            const ratio = (targetDistance - prevCum) / segment.length;
+            return {
+              x: segment.start.x + (segment.end.x - segment.start.x) * ratio,
+              y: segment.start.y + (segment.end.y - segment.start.y) * ratio,
+            };
+          }
+        }
+        return pathNodes[pathNodes.length - 1];
+      }
+
+      function getStage(progress) {
+        for (const band of stageBands) {
+          if (progress <= band.until) return band.stage;
+        }
+        return stageBands[stageBands.length - 1].stage;
+      }
+
+      function getBeltSpeed(progress) {
+        const p = ((progress % 1) + 1) % 1;
+        for (const band of conveyorBands) {
+          if (p <= band.until) return band.speed;
+        }
+        return conveyorBands[conveyorBands.length - 1].speed;
+      }
+
+      function getAverageBeltSpeed() {
+        let prev = 0;
+        let weighted = 0;
+        conveyorBands.forEach((band) => {
+          const share = band.until - prev;
+          weighted += share * band.speed;
+          prev = band.until;
+        });
+        return weighted;
+      }
+
+      function getNearestProgressFromPoint(x, y) {
+        let best = { progress: 0, dist: Infinity };
+        pathSegments.forEach((segment) => {
+          const start = segment.start;
+          const end = segment.end;
+          const vx = end.x - start.x;
+          const vy = end.y - start.y;
+          const segLenSq = vx * vx + vy * vy;
+          const t = segLenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - start.x) * vx + (y - start.y) * vy) / segLenSq));
+          const px = start.x + vx * t;
+          const py = start.y + vy * t;
+          const dist = Math.hypot(x - px, y - py);
+          const cumulativeStart = segment.cumulative - segment.length;
+          const progress = (cumulativeStart + segment.length * t) / totalPathLength;
+          if (dist < best.dist) {
+            best = { progress, dist };
+          }
+        });
+        return Math.min(1, Math.max(0, best.progress));
+      }
+
+      let baseSpeedMps = 0.15;
+      let targetSpeedMps = 0.15;
+      const MAX_SPEED = 1.2;
+      const MAX_UNITS = 80;
+      const SPAWN_INTERVAL = 2.4; // seconds between new units
+      let spawnAccumulator = 0;
+      let nextId = 1;
+      const sensors = [];
+      const secondHighlightsBuffer = Array(6).fill(0);
+      const stationNames = [...new Set(stageBands.map((band) => band.stage))];
+      let currentCongestion = {};
+
+      const alertsList = [
+        "QA dwell cresting above baseline by 18%.",
+        "Assembly detail cell trending toward saturation; recommend short buffer increase.",
+        "Welding satellite B shows micro-stop spikes (+12/min).",
+        "Packaging conveyor aligned; backlog dissipating.",
+        "Cycle variance stabilized; revert staffing to nominal.",
+        "Cutting stage thermal alarm cleared; continue monitoring velocity jitter.",
+      ];
+
+      const canvas = document.getElementById("factoryCanvas");
+      const ctx = canvas.getContext("2d");
+      let canvasDisplayWidth = 0;
+      let canvasDisplayHeight = 0;
+
+      function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvasDisplayWidth = canvas.clientWidth;
+        canvasDisplayHeight = canvas.clientHeight;
+        canvas.width = Math.round(canvasDisplayWidth * dpr);
+        canvas.height = Math.round(canvasDisplayHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      const HANDLER_IMAGE_SRC = "./builder-icon.png";
+      const handlerImg = new Image();
+      let handlerImgReady = false;
+      handlerImg.onload = () => {
+        handlerImgReady = true;
+      };
+      handlerImg.onerror = () => {
+        handlerImgReady = false;
+      };
+      handlerImg.src = HANDLER_IMAGE_SRC; // user-provided top-down handler image
+
+      function drawHandlerIcon(px, py, angle) {
+        const size = 48;
+        ctx.save();
+        ctx.translate(px, py);
+        // Keep icon upright regardless of travel direction
+        ctx.rotate(0);
+        if (handlerImgReady) {
+          ctx.drawImage(handlerImg, -size / 2, -size / 2, size, size);
+        } else {
+          // Fallback vector if the provided image is missing
+          const vestGradient = ctx.createLinearGradient(-7, -2, 7, 14);
+          vestGradient.addColorStop(0, "rgba(249, 115, 22, 0.95)"); // safety orange
+          vestGradient.addColorStop(1, "rgba(234, 88, 12, 0.9)");
+          ctx.fillStyle = vestGradient;
+          ctx.beginPath();
+          ctx.ellipse(0, 7, 9, 13, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(226, 232, 240, 0.8)";
+          ctx.fillRect(-9, 5, 18, 2.4);
+          ctx.fillStyle = "rgba(248, 250, 252, 0.95)";
+          ctx.beginPath();
+          ctx.arc(0, -6, 5.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(30, 41, 59, 0.9)";
+          ctx.beginPath();
+          ctx.arc(0, -7, 4.6, Math.PI * 0.1, Math.PI * 1.9);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(226, 232, 240, 0.9)";
+          ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          ctx.moveTo(-2, 0);
+          ctx.lineTo(-9, 5.5);
+          ctx.moveTo(2, 0);
+          ctx.lineTo(9, 5.5);
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(100, 116, 139, 0.9)";
+          ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          ctx.moveTo(-1.6, 14);
+          ctx.lineTo(-4.8, 22);
+          ctx.moveTo(1.6, 14);
+          ctx.lineTo(4.8, 22);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawFactory() {
+        ctx.clearRect(0, 0, canvasDisplayWidth, canvasDisplayHeight);
+        ctx.fillStyle = "rgba(2, 6, 23, 0.2)";
+        ctx.fillRect(0, 0, canvasDisplayWidth, canvasDisplayHeight);
+
+        // Subtle grid to anchor the map
+        ctx.strokeStyle = "rgba(82, 101, 143, 0.18)";
+        ctx.lineWidth = 1;
+        const cols = 5;
+        const rows = 4;
+        for (let i = 1; i < cols; i++) {
+          const x = (canvasDisplayWidth / cols) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvasDisplayHeight);
+          ctx.stroke();
+        }
+        for (let j = 1; j < rows; j++) {
+          const y = (canvasDisplayHeight / rows) * j;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvasDisplayWidth, y);
+          ctx.stroke();
+        }
+
+        // Draw the constellation-like track
+        ctx.save();
+        const guideGradient = ctx.createLinearGradient(0, 0, canvasDisplayWidth, canvasDisplayHeight);
+        guideGradient.addColorStop(0, "rgba(56, 189, 248, 0.7)");
+        guideGradient.addColorStop(1, "rgba(129, 140, 248, 0.7)");
+        ctx.beginPath();
+        pathNodes.forEach((node, idx) => {
+          const px = (node.x / FACTORY_WIDTH) * canvasDisplayWidth;
+          const py = (node.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+          if (idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.strokeStyle = guideGradient;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "rgba(56, 189, 248, 0.5)";
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.setLineDash([10, 12]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.stroke();
+        ctx.restore();
+
+        // Stage checkpoints
+        ctx.save();
+        stageBands.forEach((band) => {
+          const point = getPointAt(band.until);
+          const px = (point.x / FACTORY_WIDTH) * canvasDisplayWidth;
+          const py = (point.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+          ctx.beginPath();
+          ctx.fillStyle = "rgba(16, 185, 129, 0.25)";
+          ctx.arc(px, py, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#e2e8f0";
+          ctx.font = "11px Inter, sans-serif";
+          ctx.fillText(band.stage.split(" ")[0], px + 12, py + 4);
+        });
+        ctx.restore();
+
+        sensors.forEach((sensor) => {
+          if (sensor.history.length > 1) {
+            ctx.beginPath();
+            sensor.history.forEach((point, idx) => {
+              const px = (point.x / FACTORY_WIDTH) * canvasDisplayWidth;
+              const py = (point.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+              if (idx === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            });
+            const velocityRatio = Math.min(1, parseFloat(sensor.velocity) / MAX_SPEED);
+            ctx.strokeStyle =
+              sensor.status === "Hold"
+                ? "rgba(244,63,94,0.55)"
+                : sensor.status === "Watch"
+                ? "rgba(251,191,36,0.55)"
+                : `rgba(56,189,248,${0.25 + velocityRatio * 0.3})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+
+          const dotX = (sensor.x / FACTORY_WIDTH) * canvasDisplayWidth;
+          const dotY = (sensor.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+          const velocityRatio = Math.min(1, parseFloat(sensor.velocity) / MAX_SPEED);
+          const offsetMag = Math.hypot(sensor.offset.x, sensor.offset.y);
+          ctx.fillStyle = sensor.status === "Hold" ? "#f43f5e" : sensor.status === "Watch" ? "#fbbf24" : "#34d399";
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 5 + velocityRatio * 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(52, 211, 153, ${0.35 + velocityRatio * 0.2})`;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 10 + velocityRatio * 8, 0, Math.PI * 2);
+          ctx.fill();
+          if (offsetMag > HANDLER_OFFSET_THRESHOLD) {
+            drawHandlerIcon(dotX, dotY - 14, sensor.heading || Math.atan2(sensor.offset.y, sensor.offset.x));
+          }
+          ctx.fillStyle = "#e2e8f0";
+          ctx.font = "10px Inter, sans-serif";
+          ctx.fillText(sensor.id, dotX + 8, dotY - 8);
+        });
+      }
+
+      function calculateCongestion() {
+        const baseFactor = Math.max(baseSpeedMps, 0.05);
+        const avgBeltSpeed = getAverageBeltSpeed();
+        const cycleTimeSec = totalPathLength / Math.max(baseFactor * avgBeltSpeed, 0.1);
+        const throughputPerSec = sensors.length / Math.max(cycleTimeSec, 1);
+        const result = {};
+        stageMeta.forEach((meta) => {
+          const serviceTime = meta.length / Math.max(baseFactor * avgBeltSpeed, 0.1);
+          const serviceRate = 1 / Math.max(serviceTime, 0.001);
+          const arrivalRate = throughputPerSec * meta.share;
+          const rho = Math.max(0, Math.min(0.94, arrivalRate / serviceRate));
+          const wq =
+            rho >= 0.94
+              ? serviceTime * 1.5
+              : (rho / (1 - rho)) * ((ARRIVAL_CV ** 2 + SERVICE_CV ** 2) / 2) * (1 / serviceRate);
+          result[meta.stage] = {
+            rho,
+            wq,
+            serviceTime,
+            totalTime: wq + serviceTime,
+          };
+        });
+        return result;
+      }
+
+      function renderCongestion(congestion) {
+        const container = document.getElementById("congestionRows");
+        if (!container) return;
+        const cards = stageMeta
+          .map((meta) => {
+            const data = congestion[meta.stage] || { rho: 0, wq: 0, totalTime: 0 };
+            const status = data.rho > 0.86 ? "Hold" : data.rho > 0.72 ? "Watch" : "Flowing";
+            const badgeClass =
+              status === "Hold"
+                ? "text-rose-300"
+                : status === "Watch"
+                ? "text-amber-300"
+                : "text-emerald-300";
+            const wqText = Number.isFinite(data.wq) ? `${data.wq.toFixed(1)}s` : "High";
+            return `
+              <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <div class="flex items-center justify-between">
+                  <p class="font-semibold text-white">${meta.stage}</p>
+                  <span class="text-xs font-semibold uppercase tracking-widest ${badgeClass}">${status}</span>
+                </div>
+                <p class="mt-1 text-xs text-slate-500">ρ ${(data.rho * 100).toFixed(0)}% · Wq ${wqText}</p>
+                <div class="mt-3 flex items-center justify-between text-sm text-slate-300">
+                  <span>Service</span>
+                  <span>${data.serviceTime.toFixed(1)}s</span>
+                </div>
+                <div class="flex items-center justify-between text-sm text-slate-300">
+                  <span>Cycle w/ queue</span>
+                  <span>${data.totalTime.toFixed(1)}s</span>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+        container.innerHTML = cards;
+        const caEl = document.getElementById("caValue");
+        if (caEl) caEl.textContent = ARRIVAL_CV.toFixed(2);
+        const csEl = document.getElementById("csValue");
+        if (csEl) csEl.textContent = SERVICE_CV.toFixed(2);
+      }
+
+      let metricTick = 0;
+
+      function spawnUnit() {
+        if (sensors.length >= MAX_UNITS) return;
+        const point = getPointAt(0);
+        const id = `SC-${String(nextId).padStart(3, "0")}`;
+        nextId += 1;
+        sensors.push({
+          id,
+          progress: 0,
+          absProgress: 0,
+          x: point.x,
+          y: point.y,
+          lastX: point.x,
+          lastY: point.y,
+          stage: getStage(0),
+          speed: 0,
+          speedImpulse: 0,
+          offset: { x: 0, y: 0 },
+          heading: 0,
+          velocity: "0.00",
+          dwell: "0.0",
+          status: "Flowing",
+          statusColor: "text-emerald-300",
+          delay: 0,
+          eventTimer: 0,
+          holdTimer: 0,
+          offPathActive: false,
+          offPathTimer: 0,
+          history: [{ x: point.x, y: point.y }],
+        });
+      }
+
+      function updateSensors() {
+        const desiredBaseDelta = targetSpeedMps - baseSpeedMps;
+        const baseDeltaClamped = Math.max(-MAX_BASE_ACCEL * UPDATE_INTERVAL, Math.min(MAX_BASE_ACCEL * UPDATE_INTERVAL, desiredBaseDelta));
+        baseSpeedMps = Math.min(MAX_SPEED, Math.max(0, baseSpeedMps + baseDeltaClamped));
+        currentCongestion = calculateCongestion();
+
+        spawnAccumulator += UPDATE_INTERVAL;
+        while (spawnAccumulator >= SPAWN_INTERVAL) {
+          spawnUnit();
+          spawnAccumulator -= SPAWN_INTERVAL;
+        }
+
+        const finished = [];
+        const orderedByProgress = [...sensors].sort((a, b) => a.absProgress - b.absProgress);
+        const aheadProgressMap = new Map();
+        const aheadRefMap = new Map();
+        orderedByProgress.forEach((unit, i) => {
+          const ahead = orderedByProgress[i + 1];
+          aheadProgressMap.set(unit.id, ahead ? ahead.absProgress : null);
+          aheadRefMap.set(unit.id, ahead || null);
+        });
+
+        sensors.forEach((sensor, idx) => {
+          const wasOffPath = sensor.offPathActive;
+          const wasOffTimer = sensor.offPathTimer > 0;
+          if (sensor.eventTimer > 0) {
+            sensor.eventTimer -= UPDATE_INTERVAL;
+            if (sensor.eventTimer <= 0) {
+              sensor.status = "Flowing";
+              sensor.statusColor = "text-emerald-300";
+            }
+          }
+          if (sensor.offPathTimer > 0) {
+            sensor.offPathTimer = Math.max(0, sensor.offPathTimer - UPDATE_INTERVAL);
+            sensor.status = "Hold";
+            sensor.statusColor = "text-rose-300";
+          }
+          if (sensor.holdTimer > 0) {
+            sensor.holdTimer = Math.max(0, sensor.holdTimer - UPDATE_INTERVAL);
+            sensor.status = "Hold";
+            sensor.statusColor = "text-rose-300";
+          } else if (sensor.status === "Hold" && sensor.eventTimer <= 0) {
+            sensor.status = "Flowing";
+            sensor.statusColor = "text-emerald-300";
+          }
+          const stageCongestion = currentCongestion[sensor.stage] || { rho: 0, wq: 0 };
+          const congestionPenalty = stageCongestion.rho * 0.02 + Math.min(0.02, stageCongestion.wq * 0.0012);
+          sensor.delay = (sensor.delay + congestionPenalty) * 0.94;
+          sensor.speedImpulse *= IMPULSE_DECAY;
+          if (sensor.holdTimer > 0 || sensor.offPathTimer > 0) {
+            sensor.delay = Math.min(0.25, sensor.delay + 0.03);
+          }
+          const beltSpeedBase = getBeltSpeed(sensor.progress) * baseSpeedMps;
+          const beltSpeedProgress = beltSpeedBase * PROGRESS_GAIN;
+          const aheadProgress = aheadProgressMap.get(sensor.id);
+          const nearestAheadGap =
+            aheadProgress === null || aheadProgress === undefined ? Infinity : aheadProgress - sensor.absProgress;
+          const aheadRef = aheadRefMap.get(sensor.id);
+          const aheadStopped =
+            aheadRef &&
+            (aheadRef.holdTimer > 0 || aheadRef.offPathTimer > 0 || parseFloat(aheadRef.velocity) < 0.05);
+          const isHeld = sensor.holdTimer > 0 || sensor.offPathTimer > 0;
+          const targetSpeed = isHeld
+            ? 0
+            : Math.max(
+                0,
+                Math.min(
+                  MAX_SPEED,
+                  beltSpeedBase - sensor.delay * 1.2 + sensor.speedImpulse + (Math.random() - 0.5) * 0.01
+                )
+              );
+          const speedDelta = Math.max(
+            -MAX_UNIT_ACCEL * UPDATE_INTERVAL,
+            Math.min(MAX_UNIT_ACCEL * UPDATE_INTERVAL, targetSpeed - sensor.speed)
+          );
+          sensor.speed = Math.max(0, Math.min(MAX_SPEED, sensor.speed + speedDelta));
+          sensor.velocity = sensor.speed.toFixed(2);
+
+          let advance = isHeld ? 0 : Math.max(0, beltSpeedProgress - sensor.delay * 0.3) * UPDATE_INTERVAL / totalPathLength;
+          if (nearestAheadGap < MIN_PROGRESS_GAP || (aheadStopped && nearestAheadGap < MIN_PROGRESS_GAP * 1.5)) {
+            advance = 0;
+            sensor.delay = Math.min(0.4, sensor.delay + 0.04);
+            sensor.status = "Hold";
+            sensor.statusColor = "text-rose-300";
+          } else if (nearestAheadGap < MIN_PROGRESS_GAP * 1.2) {
+            const maxProgress = Math.max(sensor.absProgress, aheadProgress - MIN_PROGRESS_GAP);
+            sensor.absProgress = Math.min(maxProgress, sensor.absProgress + advance);
+            sensor.delay = Math.min(0.35, sensor.delay + 0.03);
+          } else {
+            sensor.absProgress = Math.min(1, sensor.absProgress + advance);
+          }
+          sensor.progress = sensor.absProgress;
+          const point = getPointAt(sensor.progress);
+          sensor.stage = getStage(sensor.progress);
+          sensor.offset.x *= OFFSET_DECAY;
+          sensor.offset.y *= OFFSET_DECAY;
+          const dwellSeconds = Math.max(8, (totalPathLength / Math.max(sensor.speed, 0.1)) * 0.35);
+          sensor.dwell = dwellSeconds.toFixed(1);
+          const adjustedX = Math.min(FACTORY_WIDTH, Math.max(0, point.x + sensor.offset.x));
+          const adjustedY = Math.min(FACTORY_HEIGHT, Math.max(0, point.y + sensor.offset.y));
+          const deltaX = adjustedX - sensor.lastX;
+          const deltaY = adjustedY - sensor.lastY;
+          const deltaMag = Math.hypot(deltaX, deltaY);
+          if (deltaMag > 0.01) {
+            sensor.heading = Math.atan2(deltaY, deltaX);
+          }
+          sensor.lastX = adjustedX;
+          sensor.lastY = adjustedY;
+          sensor.x = adjustedX;
+          sensor.y = adjustedY;
+          const offsetMag = Math.hypot(sensor.offset.x, sensor.offset.y);
+          sensor.offPathActive = sensor.offPathTimer > 0 || offsetMag > HANDLER_OFFSET_THRESHOLD;
+          if (sensor.offPathActive && !wasOffPath && Math.random() < 0.65) {
+            const trailing = sensors[idx + 1];
+            if (trailing) {
+              trailing.holdTimer = 2.5 + Math.random() * 2.5;
+              trailing.status = "Hold";
+              trailing.statusColor = "text-rose-300";
+            }
+          }
+          const justFinishedOffPath = wasOffTimer && sensor.offPathTimer === 0;
+          if (justFinishedOffPath) {
+            const nearestProgress = getNearestProgressFromPoint(sensor.x, sensor.y);
+            sensor.absProgress = Math.min(1, nearestProgress);
+            sensor.progress = sensor.absProgress;
+            const rejoinPoint = getPointAt(sensor.progress);
+            sensor.x = rejoinPoint.x;
+            sensor.y = rejoinPoint.y;
+            sensor.lastX = rejoinPoint.x;
+            sensor.lastY = rejoinPoint.y;
+            sensor.offset = { x: 0, y: 0 };
+            sensor.stage = getStage(sensor.progress);
+            sensor.status = "Flowing";
+            sensor.statusColor = "text-emerald-300";
+          }
+          sensor.history.push({ x: sensor.x, y: sensor.y });
+          if (sensor.history.length > 180) sensor.history.shift();
+          if (sensor.progress >= 1) finished.push(sensor);
+        });
+
+        if (finished.length) {
+          finished.forEach((s) => {
+            const idx = sensors.indexOf(s);
+            if (idx >= 0) sensors.splice(idx, 1);
+          });
+        }
+
+        renderSensorTable(activeFilter);
+        updateStationStatuses();
+        if (metricTick % 4 === 0) updateMetrics();
+        if (metricTick % 6 === 0) renderCongestion(currentCongestion);
+        metricTick += 1;
+        drawFactory();
+      }
+
+      function triggerTrafficPulse() {
+        targetSpeedMps = 0.2 + Math.random() * 0.25;
+      }
+
+      function triggerPhenomenon() {
+        if (!sensors.length) return;
+        const sensor = sensors[Math.floor(Math.random() * sensors.length)];
+        sensor.delay += 0.02 + Math.random() * 0.08;
+        sensor.eventTimer = 3 + Math.random() * 4; // longer off-line handling
+        sensor.offPathTimer = 2.5 + Math.random() * 4.5; // time away from line
+        sensor.status = "Hold";
+        sensor.statusColor = "text-rose-300";
+        sensor.speedImpulse = (Math.random() - 0.5) * 0.08; // +/- 0.04 m/s impulse
+        const angle = Math.random() * Math.PI * 2;
+        const magnitude = 1 + Math.random() * (MAX_OFFSET_METERS - 0.5);
+        sensor.offset.x = Math.max(
+          -MAX_OFFSET_METERS,
+          Math.min(MAX_OFFSET_METERS, sensor.offset.x + Math.cos(angle) * magnitude)
+        );
+        sensor.offset.y = Math.max(
+          -MAX_OFFSET_METERS,
+          Math.min(MAX_OFFSET_METERS, sensor.offset.y + Math.sin(angle) * magnitude)
+        );
+        targetSpeedMps = Math.max(0.4, targetSpeedMps * 0.9);
+        updateAlerts();
+      }
+
+      function renderSensorTable(filter = "all") {
+        const tbody = document.getElementById("sensorRows");
+        let rowsHtml = "";
+
+        if (filter === "stage-average") {
+          const stageGroups = {};
+          sensors.forEach((sensor) => {
+            if (!stageGroups[sensor.stage]) stageGroups[sensor.stage] = [];
+            stageGroups[sensor.stage].push(sensor);
+          });
+          rowsHtml = Object.entries(stageGroups)
+            .map(([stage, list]) => {
+              const avgVelocity =
+                list.reduce((sum, s) => sum + parseFloat(s.velocity), 0) / list.length;
+              const avgDwell =
+                list.reduce((sum, s) => sum + parseFloat(s.dwell), 0) / list.length;
+              return `
+                <tr>
+                  <td class="px-4 py-3 font-semibold text-sky-300">${stage}</td>
+                  <td class="px-4 py-3">${list.length} units</td>
+                  <td class="px-4 py-3">${avgVelocity.toFixed(2)} m/s</td>
+                  <td class="px-4 py-3">${avgDwell.toFixed(1)}s</td>
+                  <td class="px-4 py-3 text-slate-500">—</td>
+                </tr>
+              `;
+            })
+            .join("");
+        } else {
+          let list = [...sensors];
+          if (filter === "fastest") {
+            list.sort((a, b) => parseFloat(b.velocity) - parseFloat(a.velocity));
+            list = list.slice(0, 10);
+          } else if (filter === "slowest") {
+            list.sort((a, b) => parseFloat(a.velocity) - parseFloat(b.velocity));
+            list = list.slice(0, 10);
+          }
+
+          rowsHtml = list
+            .map(
+              (sensor) => `
+                <tr>
+                  <td class="px-4 py-3 font-semibold text-white">${sensor.id}</td>
+                  <td class="px-4 py-3">${sensor.stage}</td>
+                  <td class="px-4 py-3">${sensor.velocity} m/s</td>
+                  <td class="px-4 py-3">${sensor.dwell}s</td>
+                  <td class="px-4 py-3"><span class="${sensor.statusColor}">${sensor.status}</span></td>
+                </tr>
+              `
+            )
+            .join("");
+        }
+
+        tbody.innerHTML = rowsHtml;
+      }
+
+      function getSpeedColor(speed) {
+        if (speed >= 0.9) return { bg: "rgba(16,185,129,0.9)", text: "#022c22" };
+        if (speed >= 0.7) return { bg: "rgba(14,165,233,0.85)", text: "#032030" };
+        if (speed >= 0.5) return { bg: "rgba(59,130,246,0.85)", text: "#020617" };
+        if (speed >= 0.3) return { bg: "rgba(251,191,36,0.85)", text: "#0f172a" };
+        return { bg: "rgba(248,113,113,0.85)", text: "#0f172a" };
+      }
+
+      function updateSecondHighlightUI() {
+        const container = document.getElementById("secondHighlights");
+        if (!container) return;
+        container.innerHTML = secondHighlightsBuffer
+          .map((speed, idx) => {
+            const label = idx === 0 ? "t-0s" : `t-${idx}s`;
+            const { bg, text } = getSpeedColor(speed);
+            return `<span class="rounded-full px-3 py-1 text-xs font-semibold" style="background:${bg};color:${text}">${label}</span>`;
+          })
+          .join("");
+      }
+
+      function recordSecondHighlight() {
+        const avgVelocity =
+          sensors.reduce((sum, sensor) => sum + parseFloat(sensor.velocity || 0), 0) / sensors.length || 0;
+        secondHighlightsBuffer.unshift(avgVelocity);
+        if (secondHighlightsBuffer.length > 6) secondHighlightsBuffer.pop();
+        updateSecondHighlightUI();
+      }
+
+      function updateStationStatuses() {
+        const container = document.getElementById("stationStatus");
+        if (!container) return;
+        container.innerHTML = stationNames
+          .map((stage) => {
+            const members = sensors.filter((sensor) => sensor.stage === stage);
+            const avgVelocity = members.length
+              ? members.reduce((sum, s) => sum + parseFloat(s.velocity || 0), 0) / members.length
+              : 0;
+            const avgDwell = members.length
+              ? members.reduce((sum, s) => sum + parseFloat(s.dwell || 0), 0) / members.length
+              : 0;
+            const congestion = currentCongestion[stage] || { rho: 0, wq: 0 };
+            let status = "Flowing";
+            let badgeClass = "text-emerald-300";
+            if (members.length === 0) {
+              status = "Idle";
+              badgeClass = "text-slate-400";
+            } else if (congestion.rho > 0.86) {
+              status = "Hold";
+              badgeClass = "text-rose-300";
+            } else if (congestion.rho > 0.72 || avgVelocity < 0.5 || avgDwell > 40) {
+              status = "Watch";
+              badgeClass = "text-amber-300";
+            }
+            const wqText = congestion.wq ? `${congestion.wq.toFixed(1)}s Wq` : "Wq stable";
+            return `
+              <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+                <div class="flex items-center justify-between">
+                  <p class="font-semibold text-white">${stage}</p>
+                  <span class="text-xs font-semibold uppercase tracking-widest ${badgeClass}">${status}</span>
+                </div>
+                <p class="mt-2 text-xs text-slate-400">${members.length} units · ${avgVelocity.toFixed(2)} m/s · ${avgDwell.toFixed(1)}s dwell · ρ ${(congestion.rho * 100).toFixed(0)}%</p>
+                <p class="text-[11px] uppercase tracking-widest text-slate-500">${wqText}</p>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function updateAlerts() {
+        const alerts = document.getElementById("alerts");
+        const newAlert = alertsList[Math.floor(Math.random() * alertsList.length)];
+        const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const alertItem = document.createElement("li");
+        alertItem.innerHTML = `<p class="text-white">${timestamp}</p><p class="text-slate-300">${newAlert}</p>`;
+        alerts.prepend(alertItem);
+        while (alerts.children.length > 5) alerts.lastChild.remove();
+      }
+
+      function updateMetrics() {
+        const cycle = (14 + Math.random() * 8).toFixed(1);
+        const throughput = Math.floor(140 + Math.random() * 50);
+        const riskLevels = ["Low", "Moderate", "Elevated"];
+        document.getElementById("metric-cycle").textContent = `${cycle}s`;
+        document.getElementById("metric-throughput").textContent = throughput;
+        document.getElementById("metric-risk").textContent = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+      }
+
+      let activeFilter = "all";
+
+      function setupFilters() {
+        const chips = document.querySelectorAll(".filter-chip");
+        chips.forEach((chip) => {
+          chip.addEventListener("click", () => {
+            activeFilter = chip.dataset.filter;
+            chips.forEach((c) => c.classList.toggle("border-sky-400/60", c === chip));
+            renderSensorTable(activeFilter);
+          });
+        });
+      }
+
+      function setupChat() {
+        const chatInput = document.getElementById("chatInput");
+        const chatLog = document.getElementById("chatLog");
+        document.getElementById("chatSend").addEventListener("click", () => {
+          const question = chatInput.value.trim();
+          if (!question) return;
+          const response = document.createElement("div");
+          response.innerHTML = `
+            <p class="font-semibold text-white">You</p>
+            <p class="text-slate-400">${question}</p>
+            <p class="mt-2 font-semibold text-emerald-300">Star Chart AI</p>
+            <p class="text-slate-300">Latest telemetry shows ${sensors[0].stage} trending toward constraint with dwell ${sensors[0].dwell}s. Recommend balancing work content or extending buffer.</p>
+          `;
+          chatLog.prepend(response);
+          chatInput.value = "";
+        });
+      }
+
+      renderSensorTable(activeFilter);
+      currentCongestion = calculateCongestion();
+      renderCongestion(currentCongestion);
+      updateStationStatuses();
+      updateSecondHighlightUI();
+      drawFactory();
+      updateAlerts();
+      updateMetrics();
+      setupChat();
+      setupFilters();
+      setTimeout(() => {
+        targetSpeedMps = 0.6;
+      }, 500);
+
+      setInterval(updateSensors, UPDATE_MS); // 12 Hz high-resolution feed
+      setInterval(updateAlerts, 5000);
+      setInterval(triggerTrafficPulse, 6000);
+      setInterval(triggerPhenomenon, 12000);
+      setInterval(recordSecondHighlight, 1000);
+    </script>
+  </body>
+</html>
