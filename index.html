@@ -292,13 +292,18 @@
       const pathNodesNormalized = [
         // Start: Receiving dock at far left
         { x: 0.04, y: 0.72 },
-        { x: 0.22, y: 0.72 },
-        { x: 0.22, y: 0.56 },
-        { x: 0.48, y: 0.56 },
-        { x: 0.48, y: 0.42 },
-        { x: 0.7, y: 0.42 },
-        { x: 0.7, y: 0.28 },
-        { x: 0.88, y: 0.28 },
+        { x: 0.2, y: 0.72 },
+        { x: 0.2, y: 0.86 },
+        { x: 0.52, y: 0.86 },
+        { x: 0.52, y: 0.62 },
+        { x: 0.82, y: 0.62 },
+        { x: 0.82, y: 0.42 },
+        { x: 0.32, y: 0.42 },
+        { x: 0.32, y: 0.22 },
+        { x: 0.72, y: 0.22 },
+        { x: 0.72, y: 0.34 },
+        { x: 0.9, y: 0.34 },
+        { x: 0.9, y: 0.28 },
         // Finish: Outbound & Shipping at far right
         { x: 0.96, y: 0.28 },
       ];
@@ -848,27 +853,53 @@
         targetSpeedMps = 0.2 + Math.random() * 0.25;
       }
 
+      let phenomenonTimer;
+
+      function scheduleNextPhenomenon() {
+        const delay = 8000 + Math.random() * 12000; // 8–20s
+        clearTimeout(phenomenonTimer);
+        phenomenonTimer = setTimeout(triggerPhenomenon, delay);
+      }
+
       function triggerPhenomenon() {
-        if (!sensors.length) return;
+        if (!sensors.length) {
+          scheduleNextPhenomenon();
+          return;
+        }
         const sensor = sensors[Math.floor(Math.random() * sensors.length)];
-        sensor.delay += 0.02 + Math.random() * 0.08;
-        sensor.eventTimer = 3 + Math.random() * 4; // longer off-line handling
-        sensor.offPathTimer = 2.5 + Math.random() * 4.5; // time away from line
-        sensor.status = "Hold";
-        sensor.statusColor = "text-rose-300";
-        sensor.speedImpulse = (Math.random() - 0.5) * 0.08; // +/- 0.04 m/s impulse
-        const angle = Math.random() * Math.PI * 2;
-        const magnitude = 1 + Math.random() * (MAX_OFFSET_METERS - 0.5);
-        sensor.offset.x = Math.max(
-          -MAX_OFFSET_METERS,
-          Math.min(MAX_OFFSET_METERS, sensor.offset.x + Math.cos(angle) * magnitude)
-        );
-        sensor.offset.y = Math.max(
-          -MAX_OFFSET_METERS,
-          Math.min(MAX_OFFSET_METERS, sensor.offset.y + Math.sin(angle) * magnitude)
-        );
-        targetSpeedMps = Math.max(0.4, targetSpeedMps * 0.9);
+        const mode = Math.random();
+
+        if (mode < 0.25) {
+          // Minor nudge without off-path
+          sensor.delay += 0.01 + Math.random() * 0.04;
+          sensor.eventTimer = 1 + Math.random() * 1.5;
+          sensor.status = "Watch";
+          sensor.statusColor = "text-amber-300";
+        } else {
+          // Full off-path pull
+          sensor.delay += 0.02 + Math.random() * 0.08;
+          sensor.eventTimer = 3 + Math.random() * 4;
+          sensor.offPathTimer = 2 + Math.random() * 5.5;
+          sensor.status = "Hold";
+          sensor.statusColor = "text-rose-300";
+          sensor.speedImpulse = (Math.random() - 0.5) * 0.08; // +/- 0.04 m/s impulse
+          const angle = Math.random() * Math.PI * 2;
+          const magnitude = 0.8 + Math.random() * (MAX_OFFSET_METERS - 0.3);
+          sensor.offset.x = Math.max(
+            -MAX_OFFSET_METERS,
+            Math.min(MAX_OFFSET_METERS, sensor.offset.x + Math.cos(angle) * magnitude)
+          );
+          sensor.offset.y = Math.max(
+            -MAX_OFFSET_METERS,
+            Math.min(MAX_OFFSET_METERS, sensor.offset.y + Math.sin(angle) * magnitude)
+          );
+          const stopLine = Math.random() < 0.75;
+          if (stopLine) {
+            targetSpeedMps = Math.max(0.35, targetSpeedMps * 0.8);
+          }
+        }
         updateAlerts();
+        scheduleNextPhenomenon();
       }
 
       function renderSensorTable(filter = "all") {
@@ -1061,7 +1092,7 @@
       setInterval(updateSensors, UPDATE_MS); // 12 Hz high-resolution feed
       setInterval(updateAlerts, 5000);
       setInterval(triggerTrafficPulse, 6000);
-      setInterval(triggerPhenomenon, 12000);
+      scheduleNextPhenomenon();
       setInterval(recordSecondHighlight, 1000);
     </script>
   </body>
