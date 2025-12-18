@@ -1,0 +1,11 @@
+name = "star-chart-ai-proxy"
+main = "worker.js"
+compatibility_date = "2025-12-18"
+
+# Set secrets in Cloudflare (do NOT commit them):
+# - OPENAI_API_KEY (secret)
+#
+# Optional vars you can set in Cloudflare:
+# - OPENAI_MODEL = "gpt-4.1"
+# - ALLOWED_ORIGINS = "https://YOURUSER.github.io"
+

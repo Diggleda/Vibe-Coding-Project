@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Star Chart Systems | Mapping and Acceleration</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./config.js"></script>
     <style>
       body {
         font-feature-settings: "liga" off;
@@ -91,6 +92,46 @@
       </header>
 
       <main class="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+          <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Prompting Sandbox</p>
+          <div class="mt-4 space-y-4 text-sm text-slate-300">
+            <div>
+              <p class="font-semibold text-white">Prototype Prompt</p>
+              <p class="mt-1 text-slate-400">Generate a Star Chart Systems dashboard focused on live floor visualization, alerting, and LLM chat.</p>
+            </div>
+            <div>
+              <p class="font-semibold text-white">ML Prompt</p>
+              <p class="mt-1 text-slate-400">Design a time-series anomaly model that ingests quarter-second x/y telemetry, identifies sequential constraints, and outputs recommendations plus confidence.</p>
+            </div>
+          </div>
+          <div class="mt-5 space-y-3">
+            <label class="text-xs uppercase tracking-[0.4em] text-slate-400" for="chatInput">LLM Chat Prototype</label>
+            <textarea id="chatInput" class="h-24 w-full rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-white placeholder:text-slate-500" placeholder="Ask Star Chart Systems about the current constellation..."></textarea>
+            <button id="chatSend" class="w-full rounded-2xl bg-emerald-400/90 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-300">Send to AI</button>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                id="aiServerUrl"
+                class="w-full flex-1 rounded-2xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs text-white placeholder:text-slate-500"
+                placeholder="Optional: AI server URL (e.g. http://localhost:3002)"
+                autocomplete="off"
+                inputmode="url"
+              />
+              <button
+                id="aiServerUse"
+                class="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-sky-400/60"
+                type="button"
+              >
+                Use
+              </button>
+            </div>
+            <div
+              id="chatLog"
+              class="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/40 p-3 text-sm text-slate-300"
+              aria-live="polite"
+            ></div>
+          </div>
+        </div>
+
         <div class="rounded-3xl border border-cyan-500/40 bg-slate-900/70 p-6 shadow-2xl">
           <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -286,23 +327,12 @@
           </div>
 
           <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
-            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Prompting Sandbox</p>
-            <div class="mt-4 space-y-4 text-sm text-slate-300">
-              <div>
-                <p class="font-semibold text-white">Prototype Prompt</p>
-                <p class="mt-1 text-slate-400">Generate a Star Chart Systems dashboard focused on live floor visualization, alerting, and LLM chat.</p>
-              </div>
-              <div>
-                <p class="font-semibold text-white">ML Prompt</p>
-                <p class="mt-1 text-slate-400">Design a time-series anomaly model that ingests quarter-second x/y telemetry, identifies sequential constraints, and outputs recommendations plus confidence.</p>
-              </div>
-            </div>
-            <div class="mt-5 space-y-3">
-              <label class="text-xs uppercase tracking-[0.4em] text-slate-400" for="chatInput">LLM Chat Prototype</label>
-              <textarea id="chatInput" class="h-24 w-full rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-white placeholder:text-slate-500" placeholder="Ask Star Chart Systems about the current constellation..."></textarea>
-              <button id="chatSend" class="w-full rounded-2xl bg-emerald-400/90 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-300">Send to AI</button>
-              <div id="chatLog" class="space-y-2 text-sm text-slate-300"></div>
-            </div>
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Next Actions</p>
+            <ul class="mt-4 space-y-2 text-sm text-slate-300">
+              <li>Use the chat above the map to ask for bottleneck fixes, staffing shifts, or queue-time drivers.</li>
+              <li>Toggle pod coverage to inspect blind spots and overlap redundancy.</li>
+              <li>Use the sensor filters to compare fastest/slowest units and stage cohorts.</li>
+            </ul>
           </div>
         </aside>
         </div>
@@ -1354,18 +1384,309 @@
       function setupChat() {
         const chatInput = document.getElementById("chatInput");
         const chatLog = document.getElementById("chatLog");
-        document.getElementById("chatSend").addEventListener("click", () => {
+        const chatSend = document.getElementById("chatSend");
+        const aiServerUrl = document.getElementById("aiServerUrl");
+        const aiServerUse = document.getElementById("aiServerUse");
+        const chatHistory = [];
+        let apiBase = null;
+        let apiBaseResolved = false;
+        const STORAGE_KEY = "starChartAiProxyBase";
+
+        function appendMessage({ author, authorClass, text, bubbleClass }) {
+          const bubble = document.createElement("div");
+          bubble.className =
+            bubbleClass || "rounded-2xl border border-white/10 bg-slate-950/60 p-3";
+
+          const header = document.createElement("p");
+          header.className = authorClass || "text-xs font-semibold uppercase tracking-widest";
+          header.textContent = author;
+
+          const body = document.createElement("p");
+          body.className = "mt-2 whitespace-pre-wrap text-slate-200";
+          body.textContent = text;
+
+          bubble.append(header, body);
+          chatLog.append(bubble);
+          chatLog.scrollTop = chatLog.scrollHeight;
+          return { bubble, body };
+        }
+
+        function buildTelemetrySnapshot() {
+          const stageCounts = stationNames.reduce((acc, stage) => {
+            acc[stage] = 0;
+            return acc;
+          }, {});
+
+          sensors.forEach((sensor) => {
+            if (stageCounts[sensor.stage] === undefined) stageCounts[sensor.stage] = 0;
+            stageCounts[sensor.stage] += 1;
+          });
+
+          const topDwell = [...sensors]
+            .sort((a, b) => parseFloat(b.dwell || 0) - parseFloat(a.dwell || 0))
+            .slice(0, 5)
+            .map((s) => ({ id: s.id, stage: s.stage, dwell: s.dwell, velocity: s.velocity }));
+
+          const congestion = currentCongestion || {};
+          const worstStages = Object.entries(congestion)
+            .map(([stage, data]) => ({
+              stage,
+              rho: data?.rho ?? 0,
+              wq: data?.wq ?? 0,
+              totalTime: data?.totalTime ?? 0,
+            }))
+            .sort((a, b) => b.rho - a.rho)
+            .slice(0, 3);
+
+          return {
+            now: new Date().toISOString(),
+            activeFilter,
+            baseSpeedMps: Number(baseSpeedMps?.toFixed?.(3) ?? baseSpeedMps),
+            targetSpeedMps: Number(targetSpeedMps?.toFixed?.(3) ?? targetSpeedMps),
+            unitCount: sensors.length,
+            stageCounts,
+            worstStages,
+            topDwell,
+          };
+        }
+
+        function normalizeBaseUrl(raw) {
+          if (typeof raw !== "string") return null;
+          const trimmed = raw.trim();
+          if (!trimmed) return null;
+          try {
+            const url = new URL(trimmed);
+            if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+            return url.origin;
+          } catch {
+            return null;
+          }
+        }
+
+        async function isStarChartProxy(base) {
+          try {
+            const res = await fetch(`${base}/api/health`, { cache: "no-store" });
+            const data = await res.json().catch(() => null);
+            return Boolean(res.ok && data && data.app === "star-chart-ai-proxy" && data.ok === true);
+          } catch {
+            return false;
+          }
+        }
+
+        async function resolveApiBase() {
+          if (apiBaseResolved) return apiBase;
+          apiBaseResolved = true;
+
+          const configured = normalizeBaseUrl(window.STAR_CHART_AI_PROXY_BASE || "");
+          if (configured && (await isStarChartProxy(configured))) {
+            apiBase = configured;
+            localStorage.setItem(STORAGE_KEY, configured);
+            appendMessage({
+              author: "Star Chart AI",
+              authorClass: "text-xs font-semibold uppercase tracking-widest text-sky-300",
+              text: `Connected to AI server at ${configured}`,
+            });
+            return apiBase;
+          }
+
+          const stored = normalizeBaseUrl(localStorage.getItem(STORAGE_KEY));
+          if (stored && (await isStarChartProxy(stored))) {
+            apiBase = stored;
+            appendMessage({
+              author: "Star Chart AI",
+              authorClass: "text-xs font-semibold uppercase tracking-widest text-sky-300",
+              text: `Connected to local AI server at ${stored}`,
+            });
+            return apiBase;
+          }
+
+          try {
+            const res = await fetch("/api/health", { cache: "no-store" });
+            const data = await res.json().catch(() => null);
+            if (res.ok && data && data.app === "star-chart-ai-proxy" && data.ok === true) {
+              apiBase = "";
+              return apiBase;
+            }
+          } catch {
+            // ignore; try scanning below
+          }
+
+          if (window.location.protocol === "https:") {
+            apiBase = null;
+            appendMessage({
+              author: "Star Chart AI",
+              authorClass: "text-xs font-semibold uppercase tracking-widest text-amber-300",
+              text: "This page is https (GitHub Pages). Use an https AI proxy (Cloudflare Worker/Vercel/Netlify) and set it in config.js or the AI server URL field.",
+            });
+            return apiBase;
+          }
+
+          // If the page is served by another dev server (e.g. Vite), scan common localhost ports for our proxy.
+          const candidates = [];
+          for (let port = 3000; port <= 3050; port += 1) {
+            candidates.push(`http://127.0.0.1:${port}`);
+            candidates.push(`http://localhost:${port}`);
+          }
+
+          for (const base of candidates) {
+            try {
+              const res = await fetch(`${base}/api/health`, { cache: "no-store" });
+              const data = await res.json().catch(() => null);
+              if (res.ok && data && data.app === "star-chart-ai-proxy" && data.ok === true) {
+                apiBase = base;
+                localStorage.setItem(STORAGE_KEY, base);
+                appendMessage({
+                  author: "Star Chart AI",
+                  authorClass: "text-xs font-semibold uppercase tracking-widest text-sky-300",
+                  text: `Connected to local AI server at ${base}`,
+                });
+                return apiBase;
+              }
+            } catch {
+              // keep scanning
+            }
+          }
+
+          apiBase = null;
+          appendMessage({
+            author: "Star Chart AI",
+            authorClass: "text-xs font-semibold uppercase tracking-widest text-amber-300",
+            text: "AI server not found. Start it with: node server.js (from the project folder).",
+          });
+          return apiBase;
+        }
+
+        async function sendChat() {
           const question = chatInput.value.trim();
           if (!question) return;
-          const response = document.createElement("div");
-          response.innerHTML = `
-            <p class="font-semibold text-white">You</p>
-            <p class="text-slate-400">${question}</p>
-            <p class="mt-2 font-semibold text-emerald-300">Star Chart AI</p>
-            <p class="text-slate-300">Latest telemetry shows ${sensors[0].stage} trending toward constraint with dwell ${sensors[0].dwell}s. Recommend balancing work content or extending buffer.</p>
-          `;
-          chatLog.prepend(response);
+
+          if (window.location.protocol === "file:") {
+            appendMessage({
+              author: "Star Chart AI",
+              authorClass: "text-xs font-semibold uppercase tracking-widest text-amber-300",
+              text: "Open this page via the local server so the chat can call /api/chat.\nRun: node server.js\nThen open: http://localhost:3000",
+            });
+            return;
+          }
+
+          appendMessage({
+            author: "You",
+            authorClass: "text-xs font-semibold uppercase tracking-widest text-slate-400",
+            text: question,
+            bubbleClass: "rounded-2xl border border-white/10 bg-slate-950/40 p-3",
+          });
+
           chatInput.value = "";
+          chatSend.disabled = true;
+          chatSend.classList.add("opacity-70", "cursor-not-allowed");
+
+          const assistant = appendMessage({
+            author: "Star Chart AI",
+            authorClass: "text-xs font-semibold uppercase tracking-widest text-emerald-300",
+            text: "Thinking…",
+          });
+
+          try {
+            const base = await resolveApiBase();
+            if (base === null) {
+              assistant.bubble.classList.remove("border-white/10");
+              assistant.bubble.classList.add("border-amber-500/40");
+              assistant.body.classList.remove("text-slate-200");
+              assistant.body.classList.add("text-amber-200");
+              assistant.body.textContent = "Start the AI server first: node server.js";
+              return;
+            }
+
+            const endpoint = `${base}/api/chat`;
+
+            let res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                input: question,
+                history: chatHistory.slice(-16),
+                telemetry: buildTelemetrySnapshot(),
+              }),
+            });
+
+            if (res.status === 404) {
+              apiBaseResolved = false;
+              apiBase = null;
+              const retryBase = await resolveApiBase();
+              if (retryBase !== null) {
+                res = await fetch(`${retryBase}/api/chat`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    input: question,
+                    history: chatHistory.slice(-16),
+                    telemetry: buildTelemetrySnapshot(),
+                  }),
+                });
+              }
+            }
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+
+            const answer = typeof data?.text === "string" ? data.text.trim() : "";
+            assistant.body.textContent = answer || "(No response)";
+
+            chatHistory.push({ role: "user", content: question });
+            chatHistory.push({ role: "assistant", content: answer || "(No response)" });
+          } catch (err) {
+            assistant.bubble.classList.remove("border-white/10");
+            assistant.bubble.classList.add("border-rose-500/40");
+            assistant.body.classList.remove("text-slate-200");
+            assistant.body.classList.add("text-rose-200");
+            assistant.body.textContent = `Error: ${err?.message || "Unable to reach the AI server."}`;
+          } finally {
+            chatSend.disabled = false;
+            chatSend.classList.remove("opacity-70", "cursor-not-allowed");
+          }
+        }
+
+        chatSend.addEventListener("click", sendChat);
+        chatInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendChat();
+          }
+        });
+
+        aiServerUrl.value = localStorage.getItem(STORAGE_KEY) || "";
+        aiServerUse.addEventListener("click", async () => {
+          const normalized = normalizeBaseUrl(aiServerUrl.value);
+          if (!normalized) {
+            appendMessage({
+              author: "Star Chart AI",
+              authorClass: "text-xs font-semibold uppercase tracking-widest text-amber-300",
+              text: "Invalid AI server URL. Example: http://localhost:3002",
+            });
+            return;
+          }
+          if (!(await isStarChartProxy(normalized))) {
+            appendMessage({
+              author: "Star Chart AI",
+              authorClass: "text-xs font-semibold uppercase tracking-widest text-amber-300",
+              text: `No Star Chart AI proxy found at ${normalized} (expected /api/health).`,
+            });
+            return;
+          }
+          localStorage.setItem(STORAGE_KEY, normalized);
+          apiBaseResolved = true;
+          apiBase = normalized;
+          appendMessage({
+            author: "Star Chart AI",
+            authorClass: "text-xs font-semibold uppercase tracking-widest text-sky-300",
+            text: `Connected to local AI server at ${normalized}`,
+          });
+        });
+
+        appendMessage({
+          author: "Star Chart AI",
+          authorClass: "text-xs font-semibold uppercase tracking-widest text-emerald-300",
+          text: "Ask about bottlenecks, cycle time, WIP, or what to change next.",
         });
       }
 
