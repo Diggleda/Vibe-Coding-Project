@@ -1,0 +1,8 @@
+{
+  // Cloudflare Git deployments sometimes look for wrangler.json/jsonc explicitly.
+  // This mirrors wrangler.toml so `npx wrangler deploy` has an entrypoint.
+  "name": "star-chart-ai-proxy",
+  "main": "worker.js",
+  "compatibility_date": "2025-12-18"
+}
+
