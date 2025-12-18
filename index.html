@@ -353,10 +353,10 @@
       const PROGRESS_GAIN = 6; // scales belt speed to visible progress
       const MIN_PROGRESS_GAP = 0.008; // minimum progress gap to avoid overlap
       const pods = [
-        { id: "Pod-A", x: 8, y: 42, radius: 20 },
-        { id: "Pod-B", x: 32, y: 20, radius: 18 },
-        { id: "Pod-C", x: 58, y: 34, radius: 16 },
-        { id: "Pod-D", x: 46, y: 48, radius: 18 },
+        { id: "Pod-A", x: 8, y: 42, radius: 22 },
+        { id: "Pod-B", x: 32, y: 20, radius: 22 },
+        { id: "Pod-C", x: 58, y: 34, radius: 22 },
+        { id: "Pod-D", x: 46, y: 48, radius: 22 },
       ];
       let showPodCoverage = true;
       const stageColors = {
@@ -1422,12 +1422,58 @@
             stageCounts[sensor.stage] += 1;
           });
 
+          const units = sensors.map((s) => ({
+            id: s.id,
+            stage: s.stage,
+            status: s.status,
+            progress: Number.parseFloat(s.progress ?? 0),
+            x: Number.parseFloat(s.x ?? 0),
+            y: Number.parseFloat(s.y ?? 0),
+            velocityMps: Number.parseFloat(s.velocity ?? 0),
+            dwellSeconds: Number.parseFloat(s.dwell ?? 0),
+          }));
+
+          const velocityValues = units.map((u) => u.velocityMps).filter((v) => Number.isFinite(v));
+          const dwellValues = units.map((u) => u.dwellSeconds).filter((v) => Number.isFinite(v));
+          const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+
+          const velocitySummary = {
+            avgMps: Number(avg(velocityValues).toFixed(3)),
+            minMps: Number((velocityValues.length ? Math.min(...velocityValues) : 0).toFixed(3)),
+            maxMps: Number((velocityValues.length ? Math.max(...velocityValues) : 0).toFixed(3)),
+          };
+
+          const dwellSummary = {
+            avgSeconds: Number(avg(dwellValues).toFixed(2)),
+            maxSeconds: Number((dwellValues.length ? Math.max(...dwellValues) : 0).toFixed(2)),
+          };
+
+          const stageAverages = stationNames.reduce((acc, stage) => {
+            const members = units.filter((u) => u.stage === stage);
+            const stageVel = members.map((m) => m.velocityMps).filter((v) => Number.isFinite(v));
+            const stageDw = members.map((m) => m.dwellSeconds).filter((v) => Number.isFinite(v));
+            acc[stage] = {
+              unitCount: members.length,
+              avgVelocityMps: Number(avg(stageVel).toFixed(3)),
+              avgDwellSeconds: Number(avg(stageDw).toFixed(2)),
+            };
+            return acc;
+          }, {});
+
           const topDwell = [...sensors]
             .sort((a, b) => parseFloat(b.dwell || 0) - parseFloat(a.dwell || 0))
             .slice(0, 5)
             .map((s) => ({ id: s.id, stage: s.stage, dwell: s.dwell, velocity: s.velocity }));
 
           const congestion = currentCongestion || {};
+          const congestionByStage = Object.entries(congestion).reduce((acc, [stage, data]) => {
+            acc[stage] = {
+              rho: Number((data?.rho ?? 0).toFixed(4)),
+              wqSeconds: Number((data?.wq ?? 0).toFixed(2)),
+              totalSeconds: Number((data?.totalTime ?? 0).toFixed(2)),
+            };
+            return acc;
+          }, {});
           const worstStages = Object.entries(congestion)
             .map(([stage, data]) => ({
               stage,
@@ -1441,10 +1487,18 @@
           return {
             now: new Date().toISOString(),
             activeFilter,
+            showPodCoverage,
+            pods,
+            recentSecondHighlights: [...secondHighlightsBuffer],
             baseSpeedMps: Number(baseSpeedMps?.toFixed?.(3) ?? baseSpeedMps),
             targetSpeedMps: Number(targetSpeedMps?.toFixed?.(3) ?? targetSpeedMps),
             unitCount: sensors.length,
             stageCounts,
+            stageAverages,
+            velocitySummary,
+            dwellSummary,
+            units,
+            congestionByStage,
             worstStages,
             topDwell,
           };
