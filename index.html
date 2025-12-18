@@ -100,8 +100,11 @@
             <div id="secondHighlights" class="flex flex-wrap gap-2 text-xs text-white">
               <span class="rounded-full bg-emerald-500/60 px-3 py-1 text-slate-900">t-0s</span>
               <span class="rounded-full bg-sky-500/50 px-3 py-1 text-slate-900">t-1s</span>
-            <span class="rounded-full bg-indigo-500/40 px-3 py-1 text-white/80">t-2s</span>
+              <span class="rounded-full bg-indigo-500/40 px-3 py-1 text-white/80">t-2s</span>
             </div>
+            <button id="togglePods" class="rounded-2xl border border-sky-400/60 bg-slate-950/60 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-900/80">
+              Toggle Pod Coverage
+            </button>
           </div>
           <div class="floor-wrapper relative mt-4 h-[36rem] w-full overflow-hidden rounded-3xl border border-white/10">
             <div class="absolute inset-0 bg-gradient-to-br from-slate-950/20 via-slate-950/10 to-slate-950/30"></div>
@@ -129,15 +132,66 @@
           <div id="congestionRows" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
         </div>
 
+        <div class="grid gap-6 rounded-3xl border border-cyan-500/30 bg-slate-900/60 p-6 shadow-2xl md:grid-cols-2">
+          <div class="space-y-3">
+            <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Pod Inspiration</p>
+            <h3 class="text-xl font-semibold text-white">Owl-Style 360° Coverage</h3>
+            <p class="text-slate-300">
+              Like the Owl conference camera watches a room from the center to keep everyone in frame, our floor pods sit inside the production flow and listen in every direction. Each pod blends radio, IMU, and optional optical sensing to follow units without line-of-sight constraints, stitching overlapping “cones” so no move goes unseen.
+            </p>
+            <ul class="list-disc space-y-2 pl-5 text-slate-200">
+              <li>Overlapping rings of awareness—redundant eyes similar to Owl’s 360° mic + camera array.</li>
+              <li>Auto-handoff: as a unit leaves one pod’s radius, the next pod takes over seamlessly.</li>
+              <li>Edge inference at the pod trims latency the way Owl does live framing and speaker focus.</li>
+            </ul>
+          </div>
+          <div class="grid gap-4">
+            <div class="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/60">
+              <img src="./owlCamera.jpg" alt="Owl-style conference camera inspiration" class="h-48 w-full object-cover" />
+              <p class="px-4 py-3 text-sm text-slate-300">Owl conference camera—360° awareness in a single pod.</p>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/60">
+              <img src="./pod.png" alt="Star Chart pod industrial concept" class="h-48 w-full object-cover" />
+              <p class="px-4 py-3 text-sm text-slate-300">Our pod concept: ruggedized, overlapping tracking radii across the floor.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
+          <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Variance Pulse</p>
+          <h3 class="mt-2 text-xl font-semibold text-white">Flow Deviations by Stage</h3>
+          <p class="mt-2 text-sm text-slate-300">
+            Live counts of off-path deviations, slowdowns, and speedups segmented by production stage. Colors match the map markers.
+          </p>
+          <div class="mt-4 overflow-hidden rounded-2xl border border-white/10">
+            <table class="w-full text-left text-sm text-slate-200">
+              <thead class="bg-white/5 text-xs uppercase tracking-widest text-slate-400">
+                <tr>
+                  <th class="px-4 py-3">Stage</th>
+                  <th class="px-4 py-3">Deviations</th>
+                  <th class="px-4 py-3">Deviations / min</th>
+                  <th class="px-4 py-3">Slowdowns</th>
+                  <th class="px-4 py-3">Slowdowns / min</th>
+                  <th class="px-4 py-3">Speedups</th>
+                  <th class="px-4 py-3">Speedups / min</th>
+                </tr>
+              </thead>
+              <tbody id="deviationTable" class="divide-y divide-white/5 bg-slate-950/60"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="flex flex-col gap-8 lg:flex-row">
           <section class="flex-1 space-y-8">
             <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
               <p class="text-xs uppercase tracking-[0.4em] text-slate-400">1 · Problem Statement</p>
               <h2 class="mt-3 text-2xl font-semibold text-white">Speed & Cost Barriers</h2>
             <p class="mt-4 text-slate-300">
-              Traditional line studies resemble dated sky surveys—slow, expensive, and blind to fleeting anomalies. Star Chart Systems solves the speed/cost equation by streaming telemetry directly from tagged parts and displaying their journey as a living map instead of a static report.
+              The market is split: billion-dollar camera installs on one end, clipboards and spreadsheets on the other. There’s a hole in the middle for low-cost, decent-tech production tracking that smaller plants can actually afford.
             </p>
-            <p class="mt-3 text-slate-300">The result is a richer signal-to-noise ratio, accelerated improvement cycles, and zero dependence on facility-wide camera rigs.</p>
+            <p class="mt-3 text-slate-300">
+              We fill that gap with UWB-tagged products—each tag reports position through overlapping pods, eliminating the blackout zones and line-of-sight failures that plague camera-only systems. You get reliable coverage, faster reads, and actionable data without enterprise price tags.
+            </p>
           </article>
 
           <article class="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl">
@@ -268,6 +322,21 @@
       const HANDLER_OFFSET_THRESHOLD = 0.6; // meters off-track to show human handler
       const PROGRESS_GAIN = 6; // scales belt speed to visible progress
       const MIN_PROGRESS_GAP = 0.008; // minimum progress gap to avoid overlap
+      const pods = [
+        { id: "Pod-A", x: 8, y: 42, radius: 20 },
+        { id: "Pod-B", x: 32, y: 20, radius: 18 },
+        { id: "Pod-C", x: 58, y: 34, radius: 16 },
+        { id: "Pod-D", x: 46, y: 48, radius: 18 },
+      ];
+      let showPodCoverage = true;
+      const stageColors = {
+        "Raw Receiving": "#38bdf8",
+        "Prep & Mixing": "#f97316",
+        "Formulation Cells": "#a855f7",
+        "Quality & Inspection": "#22c55e",
+        "Packaging Hall": "#eab308",
+        "Outbound & Shipping": "#f43f5e",
+      };
       const ARRIVAL_CV = 0.65; // coefficient of variation of arrivals (C_a)
       const SERVICE_CV = 0.75; // coefficient of variation of service times (C_s)
 
@@ -406,6 +475,18 @@
       const secondHighlightsBuffer = Array(6).fill(0);
       const stationNames = [...new Set(stageBands.map((band) => band.stage))];
       let currentCongestion = {};
+      const stageStats = stationNames.reduce((acc, stage) => {
+        acc[stage] = {
+          totalDev: 0,
+          totalSlow: 0,
+          totalFast: 0,
+          devEvents: [],
+          slowEvents: [],
+          fastEvents: [],
+          devDurations: [],
+        };
+        return acc;
+      }, {});
 
       const alertsList = [
         "QA dwell cresting above baseline by 18%.",
@@ -546,14 +627,86 @@
           const px = (point.x / FACTORY_WIDTH) * canvasDisplayWidth;
           const py = (point.y / FACTORY_HEIGHT) * canvasDisplayHeight;
           ctx.beginPath();
-          ctx.fillStyle = "rgba(16, 185, 129, 0.25)";
+          const color = stageColors[band.stage] || "#10b981";
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.25;
           ctx.arc(px, py, 10, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "#e2e8f0";
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = color;
           ctx.font = "11px Inter, sans-serif";
           ctx.fillText(band.stage.split(" ")[0], px + 12, py + 4);
         });
         ctx.restore();
+
+        // Colored conveyor segments by stage
+        ctx.save();
+        ctx.lineWidth = 8;
+        let prevProg = 0;
+        stageBands.forEach((band) => {
+          const color = stageColors[band.stage] || "#38bdf8";
+          ctx.beginPath();
+          const samples = 24;
+          for (let i = 0; i <= samples; i++) {
+            const p = prevProg + ((band.until - prevProg) * i) / samples;
+            const pt = getPointAt(p);
+            const px = (pt.x / FACTORY_WIDTH) * canvasDisplayWidth;
+            const py = (pt.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = 0.35;
+          ctx.stroke();
+          prevProg = band.until;
+        });
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        if (showPodCoverage) {
+          ctx.save();
+          pods.forEach((pod) => {
+            const px = (pod.x / FACTORY_WIDTH) * canvasDisplayWidth;
+            const py = (pod.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+            const pr = (pod.radius / FACTORY_WIDTH) * canvasDisplayWidth;
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(94, 234, 212, 0.35)";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.arc(px, py, pr, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "rgba(8, 47, 73, 0.6)";
+            ctx.beginPath();
+            ctx.arc(px, py, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(125, 211, 252, 0.8)";
+            ctx.font = "11px Inter, sans-serif";
+            ctx.fillText(pod.id, px + 8, py + 4);
+          });
+          // Draw links
+          pods.forEach((pod) => {
+            const px = (pod.x / FACTORY_WIDTH) * canvasDisplayWidth;
+            const py = (pod.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+            sensors.forEach((sensor) => {
+              const dist = Math.hypot(sensor.x - pod.x, sensor.y - pod.y);
+              if (dist <= pod.radius) {
+                const sx = (sensor.x / FACTORY_WIDTH) * canvasDisplayWidth;
+                const sy = (sensor.y / FACTORY_HEIGHT) * canvasDisplayHeight;
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(94, 234, 212, 0.25)";
+                ctx.lineWidth = 1;
+                ctx.moveTo(px, py);
+                ctx.lineTo(sx, sy);
+                ctx.stroke();
+              }
+            });
+          });
+          ctx.restore();
+        }
 
         sensors.forEach((sensor) => {
           if (sensor.history.length > 1) {
@@ -690,6 +843,11 @@
           holdTimer: 0,
           offPathActive: false,
           offPathTimer: 0,
+          offPathStart: null,
+          countedSlow: false,
+          countedFast: false,
+          slowActive: false,
+          slowCooldown: 0,
           history: [{ x: point.x, y: point.y }],
         });
       }
@@ -707,6 +865,16 @@
         }
 
         const finished = [];
+        const stageMinSpeed = {};
+        stationNames.forEach((stage) => {
+          stageMinSpeed[stage] = Infinity;
+        });
+        sensors.forEach((s) => {
+          const v = parseFloat(s.velocity || 0);
+          if (v > 0.01 && v < stageMinSpeed[s.stage]) {
+            stageMinSpeed[s.stage] = v;
+          }
+        });
         const orderedByProgress = [...sensors].sort((a, b) => a.absProgress - b.absProgress);
         const aheadProgressMap = new Map();
         const aheadRefMap = new Map();
@@ -743,10 +911,16 @@
           const congestionPenalty = stageCongestion.rho * 0.02 + Math.min(0.02, stageCongestion.wq * 0.0012);
           sensor.delay = (sensor.delay + congestionPenalty) * 0.94;
           sensor.speedImpulse *= IMPULSE_DECAY;
+          sensor.slowCooldown = Math.max(0, sensor.slowCooldown - UPDATE_INTERVAL);
           if (sensor.holdTimer > 0 || sensor.offPathTimer > 0) {
             sensor.delay = Math.min(0.25, sensor.delay + 0.03);
           }
-          const beltSpeedBase = getBeltSpeed(sensor.progress) * baseSpeedMps;
+          const baseConveyorSpeed = getBeltSpeed(sensor.progress) * baseSpeedMps;
+          const stageControlled = stageMinSpeed[sensor.stage];
+          const beltSpeedBase =
+            stageControlled !== undefined && stageControlled !== Infinity
+              ? Math.min(baseConveyorSpeed, stageControlled)
+              : baseConveyorSpeed;
           const beltSpeedProgress = beltSpeedBase * PROGRESS_GAIN;
           const aheadProgress = aheadProgressMap.get(sensor.id);
           const nearestAheadGap =
@@ -806,6 +980,14 @@
           sensor.y = adjustedY;
           const offsetMag = Math.hypot(sensor.offset.x, sensor.offset.y);
           sensor.offPathActive = sensor.offPathTimer > 0 || offsetMag > HANDLER_OFFSET_THRESHOLD;
+          if (sensor.offPathActive && !wasOffPath) {
+            sensor.offPathStart = sensor.offPathStart || Date.now();
+            const stats = stageStats[sensor.stage];
+            if (stats) {
+              stats.totalDev += 1;
+              stats.devEvents.push(Date.now());
+            }
+          }
           if (sensor.offPathActive && !wasOffPath && Math.random() < 0.65) {
             const trailing = sensors[idx + 1];
             if (trailing) {
@@ -813,6 +995,31 @@
               trailing.status = "Hold";
               trailing.statusColor = "text-rose-300";
             }
+          }
+          const slowThresh = MAX_SPEED * 0.25;
+          const fastThresh = MAX_SPEED * 0.85;
+          const isSlow = parseFloat(sensor.velocity) < slowThresh;
+          const isFast = parseFloat(sensor.velocity) > fastThresh;
+          if (isSlow && !sensor.slowActive && sensor.slowCooldown <= 0) {
+            sensor.slowActive = true;
+            sensor.slowCooldown = 4; // seconds before another slow event can be counted
+            const stats = stageStats[sensor.stage];
+            if (stats) {
+              stats.totalSlow += 1;
+              stats.slowEvents.push(Date.now());
+            }
+          } else if (!isSlow && sensor.slowActive && parseFloat(sensor.velocity) > slowThresh * 1.05) {
+            sensor.slowActive = false;
+          }
+          if (isFast && !sensor.countedFast) {
+            sensor.countedFast = true;
+            const stats = stageStats[sensor.stage];
+            if (stats) {
+              stats.totalFast += 1;
+              stats.fastEvents.push(Date.now());
+            }
+          } else if (!isFast) {
+            sensor.countedFast = false;
           }
           const justFinishedOffPath = wasOffTimer && sensor.offPathTimer === 0;
           if (justFinishedOffPath) {
@@ -828,6 +1035,14 @@
             sensor.stage = getStage(sensor.progress);
             sensor.status = "Flowing";
             sensor.statusColor = "text-emerald-300";
+            if (sensor.offPathStart) {
+              const durationSec = (Date.now() - sensor.offPathStart) / 1000;
+              const stats = stageStats[sensor.stage];
+              if (stats) {
+                stats.devDurations.push(durationSec);
+              }
+            }
+            sensor.offPathStart = null;
           }
           sensor.history.push({ x: sensor.x, y: sensor.y });
           if (sensor.history.length > 180) sensor.history.shift();
@@ -843,6 +1058,7 @@
 
         renderSensorTable(activeFilter);
         updateStationStatuses();
+        updateDeviationTable();
         if (metricTick % 4 === 0) updateMetrics();
         if (metricTick % 6 === 0) renderCongestion(currentCongestion);
         metricTick += 1;
@@ -988,11 +1204,25 @@
       function updateStationStatuses() {
         const container = document.getElementById("stationStatus");
         if (!container) return;
+        const stageMin = {};
+        stationNames.forEach((stage) => {
+          stageMin[stage] = Infinity;
+        });
+        sensors.forEach((s) => {
+          const v = parseFloat(s.velocity || 0);
+          if (v > 0.01 && v < stageMin[s.stage]) stageMin[s.stage] = v;
+        });
         container.innerHTML = stationNames
           .map((stage) => {
             const members = sensors.filter((sensor) => sensor.stage === stage);
             const avgVelocity = members.length
-              ? members.reduce((sum, s) => sum + parseFloat(s.velocity || 0), 0) / members.length
+              ? members.reduce((sum, s) => {
+                  const v = parseFloat(s.velocity || 0);
+                  if (v > 0.05) return sum + v;
+                  const beltFallback = getBeltSpeed(s.progress) * baseSpeedMps;
+                  const controlled = stageMin[stage] !== Infinity ? Math.min(beltFallback, stageMin[stage]) : beltFallback;
+                  return sum + controlled;
+                }, 0) / members.length
               : 0;
             const avgDwell = members.length
               ? members.reduce((sum, s) => sum + parseFloat(s.dwell || 0), 0) / members.length
@@ -1023,6 +1253,55 @@
             `;
           })
           .join("");
+      }
+
+      function updateDeviationTable() {
+        const tbody = document.getElementById("deviationTable");
+        if (!tbody) return;
+        const now = Date.now();
+        const windowMs = 60000;
+        const windowStart = now - windowMs;
+
+        const rows = stationNames
+          .map((stage) => {
+            const stats = stageStats[stage] || {
+              totalDev: 0,
+              totalSlow: 0,
+              totalFast: 0,
+              devEvents: [],
+              slowEvents: [],
+              fastEvents: [],
+              devDurations: [],
+            };
+            // prune old events
+            while (stats.devEvents.length && stats.devEvents[0] < windowStart) stats.devEvents.shift();
+            while (stats.slowEvents.length && stats.slowEvents[0] < windowStart) stats.slowEvents.shift();
+            while (stats.fastEvents.length && stats.fastEvents[0] < windowStart) stats.fastEvents.shift();
+            const devCount = stats.devEvents.filter((t) => t >= windowStart).length;
+            const slowCount = stats.slowEvents.filter((t) => t >= windowStart).length;
+            const fastCount = stats.fastEvents.filter((t) => t >= windowStart).length;
+            const perMin = {
+              deviations: (devCount / windowMs) * 60000,
+              slows: (slowCount / windowMs) * 60000,
+              fast: (fastCount / windowMs) * 60000,
+            };
+            const color = stageColors[stage] || "#38bdf8";
+            return `
+              <tr>
+                <td class="px-4 py-3 font-semibold text-white">
+                  <span class="mr-2 inline-block h-3 w-3 rounded-full" style="background:${color}"></span>${stage}
+                </td>
+                <td class="px-4 py-3">${stats.totalDev}</td>
+                <td class="px-4 py-3">${perMin.deviations.toFixed(1)}</td>
+                <td class="px-4 py-3">${stats.totalSlow}</td>
+                <td class="px-4 py-3">${perMin.slows.toFixed(1)}</td>
+                <td class="px-4 py-3">${stats.totalFast}</td>
+                <td class="px-4 py-3">${perMin.fast.toFixed(1)}</td>
+              </tr>
+            `;
+          })
+          .join("");
+        tbody.innerHTML = rows;
       }
 
       function updateAlerts() {
@@ -1057,6 +1336,21 @@
         });
       }
 
+      function setupPodsToggle() {
+        const button = document.getElementById("togglePods");
+        if (!button) return;
+        const syncButton = () => {
+          button.classList.toggle("border-emerald-400/60", showPodCoverage);
+          button.classList.toggle("text-emerald-300", showPodCoverage);
+        };
+        button.addEventListener("click", () => {
+          showPodCoverage = !showPodCoverage;
+          syncButton();
+          drawFactory();
+        });
+        syncButton();
+      }
+
       function setupChat() {
         const chatInput = document.getElementById("chatInput");
         const chatLog = document.getElementById("chatLog");
@@ -1085,6 +1379,8 @@
       updateMetrics();
       setupChat();
       setupFilters();
+      setupPodsToggle();
+      updateDeviationTable();
       setTimeout(() => {
         targetSpeedMps = 0.6;
       }, 500);
