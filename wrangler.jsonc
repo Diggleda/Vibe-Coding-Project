@@ -3,6 +3,9 @@
   // This mirrors wrangler.toml so `npx wrangler deploy` has an entrypoint.
   "name": "star-chart-ai-proxy",
   "main": "worker.js",
-  "compatibility_date": "2025-12-18"
+  "compatibility_date": "2025-12-18",
+  "vars": {
+    "OPENAI_MODEL": "gpt-4.1",
+    "ALLOWED_ORIGINS": "https://diggleda.github.io"
+  }
 }
-

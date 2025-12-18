@@ -10,3 +10,7 @@ compatibility_date = "2025-12-18"
 # - OPENAI_MODEL = "gpt-4.1"
 # - ALLOWED_ORIGINS = "https://YOURUSER.github.io"
 
+[vars]
+OPENAI_MODEL = "gpt-4.1"
+# GitHub Pages sends Origin like "https://diggleda.github.io" (no path, no trailing slash)
+ALLOWED_ORIGINS = "https://diggleda.github.io"
