@@ -1697,7 +1697,9 @@
           }
         });
 
-        aiServerUrl.value = localStorage.getItem(STORAGE_KEY) || "";
+        const configuredDefault = normalizeBaseUrl(window.STAR_CHART_AI_PROXY_BASE || "");
+        const storedDefault = normalizeBaseUrl(localStorage.getItem(STORAGE_KEY));
+        aiServerUrl.value = storedDefault || configuredDefault || "";
         aiServerUse.addEventListener("click", async () => {
           const normalized = normalizeBaseUrl(aiServerUrl.value);
           if (!normalized) {
